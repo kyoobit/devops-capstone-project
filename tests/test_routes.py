@@ -235,3 +235,36 @@ class TestAccountService(TestCase):
             status.HTTP_404_NOT_FOUND,
             "Did not return a 404 as expected",
         )
+
+    def test_delete_account(self):
+        """It should delete an account"""
+        # Create a test account
+        account = AccountFactory()
+        response = self.client.post(
+            BASE_URL,
+            json=account.serialize(),
+            content_type="application/json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            "Could not create test Account",
+        )
+
+        # Delete the new account
+        new_account = response.get_json()
+        response = self.client.delete(f"{BASE_URL}/{new_account['id']}")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+            "Did not return a 204 as expected",
+        )
+
+    def test_method_not_allowed(self):
+        """It should not allow an illegal method call"""
+        response = self.client.delete(BASE_URL)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+            "Did not return a 405 as expected",
+        )
