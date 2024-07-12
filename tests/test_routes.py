@@ -161,3 +161,15 @@ class TestAccountService(TestCase):
             status.HTTP_404_NOT_FOUND,
             "Did not return a 404 as expected",
         )
+
+    def test_get_account_list(self):
+        """It should GET a list of accounts"""
+        self._create_accounts(5)
+        response = self.client.get(BASE_URL)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+            "Could not list Accounts",
+        )
+        data = response.get_json()
+        self.assertEqual(len(data), 5)
