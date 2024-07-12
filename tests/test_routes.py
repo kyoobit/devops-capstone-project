@@ -173,3 +173,65 @@ class TestAccountService(TestCase):
         )
         data = response.get_json()
         self.assertEqual(len(data), 5)
+
+    def test_update_account(self):
+        """It should Update an existing Account"""
+        # Create a test account
+        account = AccountFactory()
+        response = self.client.post(
+            BASE_URL,
+            json=account.serialize(),
+            content_type="application/json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            "Could not create test Account",
+        )
+
+        # Update the account
+        new_account = response.get_json()
+        new_account["name"] = "My New Name"
+        response = self.client.put(
+            f"{BASE_URL}/{new_account['id']}",
+            json=new_account,
+            content_type="application/json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+            "Could not update test Account",
+        )
+
+        # Check the name on the account
+        updated_account = response.get_json()
+        self.assertEqual(updated_account["name"], "My New Name")
+
+    def test_update_account_not_found(self):
+        """It should not Update a non-existing Account"""
+        # Create a test account
+        account = AccountFactory()
+        response = self.client.post(
+            BASE_URL,
+            json=account.serialize(),
+            content_type="application/json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+            "Could not create test Account",
+        )
+
+        # Update the account
+        new_account = response.get_json()
+        new_account["name"] = "My New Name"
+        response = self.client.put(
+            f"{BASE_URL}/-1",
+            json=new_account,
+            content_type="application/json"
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+            "Did not return a 404 as expected",
+        )
