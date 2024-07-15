@@ -9,6 +9,7 @@ import os
 import logging
 from unittest import TestCase
 from tests.factories import AccountFactory
+from service import talisman
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
@@ -16,6 +17,8 @@ from service.routes import app
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
+
+HTTPS_ENVIRON = {"wsgi.url_scheme": "https"}
 
 BASE_URL = "/accounts"
 
@@ -33,6 +36,7 @@ class TestAccountService(TestCase):
         app.config["DEBUG"] = False
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
         app.logger.setLevel(logging.CRITICAL)
+        talisman.force_https = False
         init_db(app)
 
     @classmethod
@@ -268,3 +272,16 @@ class TestAccountService(TestCase):
             status.HTTP_405_METHOD_NOT_ALLOWED,
             "Did not return a 405 as expected",
         )
+
+    def test_security_headers(self):
+        """It should return security headers"""
+        response = self.client.get('/', environ_overrides=HTTPS_ENVIRON)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        headers = {
+            'X-Frame-Options': 'SAMEORIGIN',
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'self'; object-src 'none'",
+            'Referrer-Policy': 'strict-origin-when-cross-origin',
+        }
+        for key, value in headers.items():
+            self.assertEqual(response.headers.get(key), value)
